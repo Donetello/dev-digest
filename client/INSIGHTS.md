@@ -16,6 +16,16 @@ _Глухі кути й антипатерни: що пробували, чом�
 ## Codebase Patterns
 _Конвенції й архітектурні рішення, яких немає в коді чи документації._
 
+- **Лічильники severity рахують «після Hide low confidence, до фільтра severity»** · 2026-11-23 · confirmed
+  Рахунок мусить збігатися зі списком, а список = `visibleFindings(findings, hideLow, severity)`; dismissed-знахідки в ньому
+  лишаються (приглушені), тож рахуються теж, на відміну від `blockers` у шапці `ReviewRunAccordion` (CRITICAL без
+  `dismissed_at`). Лічильники — з пропсів `findings`, після accept/dismiss `invalidateQueries(["reviews", prId])` оновлює їх
+  без перезавантаження. Доказ: `FindingsPanel/{helpers.ts,FindingsPanel.tsx}`, `FindingsPanel.test.tsx`.
+- **Контракт `Severity` без `INFO`, а `SEV`/`SEVERITY_ORDER` його мають** · 2026-11-23 · confirmed
+  `z.enum(['CRITICAL','WARNING','SUGGESTION'])` у `vendor/shared/contracts/findings.ts`, тоді як `SEV` (vendor/ui tokens)
+  і `SEVERITY_ORDER` містять `INFO`. Рядки за severity будуй по трьох рівнях контракту (`SEVERITY_LEVELS`), інакше типи
+  `Record<Severity, …>` не зійдуться, а `INFO` ніколи не матиме знахідок.
+
 ## Tool & Library Notes
 _Квірки залежностей, інструментів, версій, ОС._
 
@@ -39,3 +49,7 @@ Seeded demo-PR `acme/payments-api#482` має порожній diff (`clone_path
 
 ## Open Questions
 _Що лишилось нез'ясованим (з датою й наступним кроком)._
+
+- **Рівень без знахідок: показувати «0» чи ховати?** · 2026-11-23 · open
+  ТЗ «severity counters» суперечить собі: P1/P3 — формат з трьома рівнями й «0», а останній скріншот — «рівень з нулем не
+  показується». Зараз показуємо `0`. Наступний крок: уточнити в ментора; якщо ховати — фільтр у `SeverityCounters.tsx`.

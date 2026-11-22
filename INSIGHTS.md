@@ -21,6 +21,12 @@
 - **`pnpm` 12 для `./scripts/dev.sh`** · 2026-11-22 · confirmed
   Падає з `ERR_PNPM_IGNORED_BUILDS`; див. Tool & Library Notes.
 
+- **Skill `engineering-insights` не викликається через інструмент Skill** · 2026-11-23 · confirmed
+  `Skill("engineering-insights")` → `Unknown skill`: проєктні скіли з `.claude/skills/` не реєструються, а блок
+  `[engineering-insights]` від `UserPromptSubmit`-hook у контексті сесії не з'явився. Що робити: читати
+  `.claude/skills/engineering-insights/SKILL.md` напряму й виконувати кроки вручну; перевірити, що hooks справді
+  завантажені (папка довірена). Доказ: помилка виклику Skill у сесії 2026-11-23.
+
 ## Codebase Patterns
 
 - **`vendor/shared` — це дві фізичні копії, а не один пакет** · 2026-11-22 · confirmed
@@ -31,6 +37,12 @@
 - **Чотири незалежні пакети без workspace** · 2026-11-22 · confirmed
   Кожен має свій lockfile; `server`/`client` — pnpm, `reviewer-core`/`e2e` — **npm**. Спільний код — через tsconfig path
   alias (`@devdigest/reviewer-core` → `../reviewer-core/src`), а не опубліковані модулі.
+
+- **Seeded demo-PR `acme/payments-api#482` має порожній diff** · 2026-11-23 · confirmed
+  `repos.clone_path = null` і фейковий `head_sha` → trace: «Diff ready — 0 changed file(s)». Усі три агенти відповідають
+  `approve`/100 «diff is empty» і не бачать hardcoded Stripe-ключ зі сід-рев'ю (CRITICAL 0.98 `src/config.ts:12`), тож цей PR
+  не міряє якість агентів. Для порівняння до/після використовуй реальний PR (`Donetello/pomrok`, є клон і diff).
+  Доказ: `GET /runs/:id/trace`, `GET /pulls/:id/reviews`.
 
 ## Tool & Library Notes
 
@@ -66,6 +78,9 @@
   Файли `server/`, `client/` (код, `messages/*.json`, `vendor/shared`) з `\r\n`. Багаторядкові правки з LF-`old_string` через
   Edit-інструмент можуть не збігатися (не перевіряв прямо), тому для таких правок я користувався python-хелпером, що
   нормалізує кінці рядків і вимагає рівно один збіг. Нові файли з Write виходять LF — git це не ламає.
+  Update 2026-11-23: підтверджено в `client/` (`FindingsPanel/*.ts(x)` — CRLF). На цій машині немає python (`python3` —
+  заглушка Microsoft Store), тож той самий хелпер працює як `node`-скрипт: читає файл, `\r\n`→`\n`, правка з перевіркою
+  «рівно один збіг», назад у `\r\n`. Нові файли після Write: `sed -i 's/\r$//; s/$/\r/'`.
 
 ## Recurring Errors & Fixes
 
@@ -95,3 +110,7 @@
   визначити, яка сторона новіша.
 - **Виправити Windows-баг у `migrate.ts`/`seed.ts` у коді?** · 2026-11-22 · open
   Зараз лише обхід. Потрібне рішення користувача: чи правити вихідники (мінімальна зміна — `pathToFileURL`).
+- **Security Reviewer: `approve` зі score 0** · 2026-11-23 · open
+  На `pomrok#3` Security Reviewer повернув verdict `approve`, score `0`, 0 знахідок (General/Performance — 95). Може бути
+  артефакт моделі (`deepseek-v4-flash`) або відсутня валідація узгодженості verdict/score у `reviewer-core`. Наступний
+  крок: повторити прогін і подивитися `raw_output` у trace; перевірити reduce-логіку в `reviewer-core/src`.
