@@ -1,6 +1,6 @@
 /* SeverityCounters — "3 CRITICAL · 5 WARNING · 2 SUGGESTION" row. Each level is
    a toggle button: click keeps only that severity in the list, click on the
-   active level clears the filter. Colors come from SEV (vendor/ui tokens). */
+   active level clears the filter. Colors and labels come from SEV (vendor/ui tokens). */
 "use client";
 
 import React from "react";
@@ -35,7 +35,7 @@ export function SeverityCounters({
               onClick={() => onChange(isActive ? null : sev)}
               style={s.counter(SEV[sev].c, SEV[sev].bg, isActive, dimmed)}
             >
-              <span className="tnum">{counts[sev]}</span> {t(`panel.severity.${sev}`)}
+              <span className="tnum">{counts[sev]}</span> {SEV[sev].label.toUpperCase()}
             </button>
           </React.Fragment>
         );
